@@ -1,0 +1,7 @@
+# Only services/, sdk/ and deployments/ are needed by services/Dockerfile. Leading "/" = repo root only.
+/public/
+/dist/
+/docs/
+/src/
+/contracts/
+node_modules/

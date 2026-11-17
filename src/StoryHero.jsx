@@ -1,0 +1,46 @@
+import React,{useEffect,useRef} from 'react';
+import * as THREE from 'three';
+import {gsap} from 'gsap';
+import Lenis from 'lenis';
+import {heroImages} from './storyImages';
+import './story.css';
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const smooth=(a,b,v)=>{let x=clamp((v-a)/(b-a));return x*x*(3-2*x)};
+function StoryScene({section,stage}){
+ const host=useRef(null);
+ useEffect(()=>{
+  const el=host.current;if(!el)return;let renderer,raf=0,alive=true,visible=false,last=0,time=0,shown=0,velocity=0,loaded=0,signalled=false;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
+  try{
+   renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'high-performance'});renderer.setClearColor(0x0b0b0c,0);renderer.outputColorSpace=THREE.SRGBColorSpace;el.appendChild(renderer.domElement);
+   const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(46,1,.1,100);camera.position.z=10;
+   const loader=new THREE.TextureLoader(),geometry=new THREE.PlaneGeometry(1,1.42),materials=[],cards=[];const tilt=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),-.32),heroQ=new THREE.Quaternion(),ringQ=new THREE.Quaternion(),wallQ=new THREE.Quaternion(),euler=new THREE.Euler();
+   const vertexShader=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+   const fragmentShader=`uniform sampler2D image;uniform float alpha,blur,wallClip,clipEdge,clipMobile;varying vec2 vUv;void main(){vec4 center=texture2D(image,vUv);vec3 color=center.rgb;if(blur>.02){vec2 d=vec2(blur*.004,0.);vec3 spread=(center.rgb*2.+texture2D(image,vUv+d).rgb+texture2D(image,vUv-d).rgb+texture2D(image,vUv+d.yx).rgb+texture2D(image,vUv-d.yx).rgb)/6.;color=mix(color,spread,blur);color.r=texture2D(image,vUv+d*.6).r;color.b=texture2D(image,vUv-d*.6).b;}color=pow(max(color,vec3(0.)),vec3(.78));float border=1.-step(.025,min(min(vUv.x,1.-vUv.x),min(vUv.y,1.-vUv.y)));color=mix(color,vec3(.84,.86,.85),border);float mask=clipMobile>.5?smoothstep(clipEdge-3.,clipEdge+3.,gl_FragCoord.y):1.-smoothstep(clipEdge-3.,clipEdge+3.,gl_FragCoord.x);gl_FragColor=vec4(color,center.a*alpha*mix(1.,mask,wallClip));}`;
+   const count=innerWidth<=640?12:20;
+   for(let i=0;i<count;i++){const texture=loader.load(heroImages[i],()=>{loaded++},undefined,()=>{loaded++});texture.colorSpace=THREE.SRGBColorSpace;texture.minFilter=THREE.LinearFilter;texture.generateMipmaps=false;const material=new THREE.ShaderMaterial({uniforms:{image:{value:texture},alpha:{value:1},blur:{value:0},wallClip:{value:0},clipEdge:{value:0},clipMobile:{value:0}},vertexShader,fragmentShader,transparent:true,side:THREE.DoubleSide});materials.push(material);const mesh=new THREE.Mesh(geometry,material);scene.add(mesh);cards.push(mesh)}
+   const resize=()=>{let w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};let ro=new ResizeObserver(resize);ro.observe(el);resize();
+   function paint(now){if(!alive||!visible)return;const dt=Math.min(.033,(now-(last||now))/1000);last=now;const rect=section.current.getBoundingClientRect(),span=Math.max(1,section.current.offsetHeight-innerHeight),target=clamp(-rect.top/span);
+    if(reduce.matches){shown=target;velocity=0}else{const delta=clamp(target-shown,-.16,.16);velocity+=(18*18*delta-36*velocity)*dt;shown=clamp(shown+velocity*dt);time+=dt}
+    const ring=smooth(.04,.34,shown),wall=smooth(.42,.94,shown),h=2*10*Math.tan(THREE.MathUtils.degToRad(23)),w=h*camera.aspect;
+    cards.forEach((card,i)=>{
+     let age=((((i*7)%count)+.5)/count+(reduce.matches?0:time*.055))%1,theta=(i/count)*Math.PI*2+time*.08,rad=.4+age*5.7;
+     const hx=Math.cos(theta)*rad,hy=Math.sin(theta)*rad*.66,hz=-5+age*8,hs=.32+age*1.34;
+     const angle=i/count*Math.PI*2+shown*6+time*.08,radius=camera.aspect<.8?1.8:2.35,rx=Math.sin(angle)*radius,ry=-Math.cos(angle)*radius*.32,rz=Math.cos(angle)*radius*.947;
+     let stagger=smooth(.42+i/count*.25,.72+i/count*.25,shown);let col=i%4,row=Math.floor(i/4),mobile=camera.aspect<.8;
+     const wx=mobile?(col-1.5)*1.36:-w*.25+(col-1.5)*1.68,wy=mobile?3.15-(row-2)*1.82:-(row-2)*2.22+(col-1.5)*.42,wz=0;
+     card.position.set(THREE.MathUtils.lerp(THREE.MathUtils.lerp(hx,rx,ring),wx,stagger),THREE.MathUtils.lerp(THREE.MathUtils.lerp(hy,ry,ring),wy,stagger),THREE.MathUtils.lerp(THREE.MathUtils.lerp(hz,rz,ring),wz,stagger));
+     heroQ.setFromEuler(euler.set(0,Math.sin(theta)*.12,Math.sin(theta)*.09));ringQ.setFromEuler(euler.set(0,angle+Math.PI/2,0));ringQ.premultiply(tilt);wallQ.setFromEuler(euler.set(0,-.16,.14));card.quaternion.copy(heroQ).slerp(ringQ,ring).slerp(wallQ,stagger);
+     const size=THREE.MathUtils.lerp(THREE.MathUtils.lerp(hs,1,ring),mobile?1.15:1.48,stagger);card.scale.setScalar(size);
+     const depthFade=clamp(Math.min(age*3,(1-age)*4));card.material.uniforms.alpha.value=THREE.MathUtils.lerp(THREE.MathUtils.lerp(.25+depthFade*.7,.95,ring),1,stagger);card.material.uniforms.blur.value=(1-ring)*Math.pow(Math.abs(age-.5)*2,2);const ratio=renderer.getPixelRatio();card.material.uniforms.wallClip.value=smooth(.70,.97,shown)*stagger;card.material.uniforms.clipMobile.value=mobile?1:0;card.material.uniforms.clipEdge.value=(mobile?el.clientHeight*.50:el.clientWidth*.50)*ratio;
+    });
+    renderer.render(scene,camera);if(!signalled&&loaded>=count){signalled=true;window.dispatchEvent(new Event('refractfi:scene-ready'))}raf=requestAnimationFrame(paint);
+   }
+   const io=new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(visible){last=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(paint)}else cancelAnimationFrame(raf)},{rootMargin:'100px'});io.observe(section.current);
+   return()=>{alive=false;cancelAnimationFrame(raf);io.disconnect();ro.disconnect();geometry.dispose();materials.forEach(m=>{m.uniforms.image.value.dispose();m.dispose()});renderer.dispose();renderer.domElement.remove()};
+  }catch(error){window.dispatchEvent(new Event('refractfi:scene-ready'));console.warn('Story WebGL unavailable',error);el.classList.add('story-fallback');return()=>{alive=false;cancelAnimationFrame(raf);renderer?.dispose()}}
+ },[section,stage]);
+ return <div className="story-canvas" ref={host} aria-hidden="true"><div className="story-static-wall">{heroImages.slice(0,8).map(src=><img src={src} alt="" key={src}/>)}</div></div>;
+}
+function Letters({text}){return [...text].map((letter,i)=><span className="story-letter" aria-hidden="true" key={i}>{letter===' '?'\u00a0':letter}</span>)}
+export default function StoryHero(){const section=useRef(null),stage=useRef(null);useEffect(()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const lenis=new Lenis({lerp:.1,smoothWheel:true,autoRaf:true});return()=>lenis.destroy()},[]);useEffect(()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;let context=gsap.context(()=>{gsap.from('.story-letter',{yPercent:50,scaleY:1.4,opacity:0,duration:1.4,stagger:.025,ease:'power3.out'});gsap.from('.story-copy-lines p',{y:40,opacity:0,duration:.8,stagger:.12,delay:.9,ease:'power3.out'})},stage);return()=>context.revert()},[]);useEffect(()=>{let frame=0;const update=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;const s=section.current,root=stage.current;if(!s||!root)return;let rect=s.getBoundingClientRect(),p=clamp(-rect.top/Math.max(1,s.offsetHeight-innerHeight)),hero=1-smooth(.03,.17,p),library=smooth(.79,.96,p);root.style.setProperty('--hero-opacity',hero.toFixed(3));root.style.setProperty('--library-opacity',library.toFixed(3));root.style.setProperty('--library-y',`${(1-library)*44}px`);root.querySelector('.story-hero-copy').style.visibility=hero<.01?'hidden':'visible';root.querySelector('.story-library-copy').style.visibility=library<.01?'hidden':'visible'})};update();window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);return()=>{window.removeEventListener('scroll',update);window.removeEventListener('resize',update);cancelAnimationFrame(frame)}},[]);return <section className="story" ref={section} aria-label="RefractFi introduction"><div className="story-stage" ref={stage}><StoryScene section={section} stage={stage}/><div className="story-hero-copy"><div className="story-headline"><h1 aria-label="One account."><Letters text="One"/><br/><Letters text="account."/></h1><h2 aria-label="Many agents"><Letters text="Many"/><br/><span className="story-marquee" aria-hidden="true">(<span className="story-marquee-window"><span>agents &nbsp;agents &nbsp;</span></span>)</span></h2></div><div className="story-copy-lines"><p>One margin account. Multiple AI agents. One netted perps book.</p><p>Set a budget, markets and risk limits for every agent.</p><p>Robinhood Chain · USDG.</p></div></div><div className="story-library-copy"><h2>One book.<br/>Many<br/>Beams.</h2><p>Recombine agent positions into one netted margin account.</p><p>From Beam controls to crossing windows, explore the architecture.</p><a href="/protocol">Explore the protocol <span>↗</span></a></div><div className="story-ruler" aria-hidden="true">{Array.from({length:18},(_,i)=><i key={i}/>)}</div></div></section>}

@@ -1,0 +1,60 @@
+/* Lodestone — the canvas is the whole picture; the button is an invisible hit area over the channel. */
+.ld {
+  position: absolute;
+  inset: 0;
+  background: #dcdadd;
+}
+.ld-gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+.ld-hit {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 28px;
+  background: transparent;
+  cursor: grab;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
+}
+.ld-hit.is-dragging {
+  cursor: grabbing;
+}
+.ld-hit:focus {
+  outline: none;
+}
+.ld-hit:focus-visible {
+  outline: 2px solid #8a5cff;
+  outline-offset: 4px;
+}
+
+/* No WebGL2: a flat channel with a sliding drop. */
+.ld--flat .ld-hit {
+  container-type: size;
+  background: #c9c6cc;
+  box-shadow: inset 0 6px 14px rgb(0 0 0 / 0.28);
+  transition: background 0.5s ease;
+}
+.ld--flat .ld-hit::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 2%;
+  height: 80cqh;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #6a6870 0%, #0a0a0c 55%);
+  transition: left 0.7s cubic-bezier(0.6, 0, 0.2, 1);
+}
+.ld--flat .ld-hit[aria-checked='true'] {
+  background: #8a5cff;
+}
+.ld--flat .ld-hit[aria-checked='true']::after {
+  left: calc(98% - 80cqh);
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@refractfi/services",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun src/index.ts",
+    "test": "bun test",
+    "typecheck": "tsc -p .",
+    "build:api": "bun build --target=node --format=esm --minify src/mcp-server.ts --outfile ../api/mcp.js && bun build --target=node --format=esm --minify src/api/telegram-link.entry.ts --outfile ../api/telegram-link.js && bun build --target=node --format=esm --minify src/api/telegram.entry.ts --outfile ../api/telegram.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "@supabase/supabase-js": "2",
+    "viem": "2.21.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "typescript": "5.6.3"
+  }
+}

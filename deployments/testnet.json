@@ -1,0 +1,116 @@
+{
+  "chainId": 46630,
+  "rpc": "https://rpc.testnet.chain.robinhood.com",
+  "explorer": "https://explorer.testnet.chain.robinhood.com",
+  "supabase": "https://bnpgwqhmtfpgjdcfagxq.supabase.co",
+  "accounts": {
+    "deployer": "0xaC7a65e01C08Ae7FfA25C632643358AF322f7856",
+    "guardian": "0xDAA1985c57eA44e18Fa6145844BD90fcFa8108FC",
+    "pusher": "0x26ed1f7a450a55794D412bA65eBa486C2f60aAd6",
+    "settler": "0x3BE213FFc37BcA908f18227725656675506872Ca",
+    "keeper": "0x85FFd2c204418EAC3aD3db58670C3A5aF835955D",
+    "poster": "0x3A9DBD0A644F73585092C7FCeB936A4796C53ab2"
+  },
+  "contracts": {
+    "TestnetVerifier": {
+      "address": "0x2A1c5b455ACCCe362A0e32276b87e92C52892D55",
+      "block": 152437379
+    },
+    "StreamsFeed": {
+      "address": "0x24DED1eb1244A4b41212d9B94CEBcA478945F21f",
+      "block": 152437386
+    },
+    "MockUSDG": {
+      "address": "0x9117a85f3d0a2cd861660957ec78ce1defab9a30",
+      "block": 152473724
+    },
+    "RefractEngine": {
+      "address": "0x1ddddac71d89fe668e98c959670452f1d921adba",
+      "block": 154126403
+    },
+    "SpectrumRegistry": {
+      "address": "0x9bb54b159d3c8e9e6bd5eea1c0365cfbad2f02a2",
+      "block": 152473749
+    },
+    "TraceRoots": {
+      "address": "0x1e392fe3ca8c2cd1d4c71cb427271e3567212488",
+      "block": 152473762
+    }
+  },
+  "deployBlock": 154126403,
+  "open": {
+    "dataStreamsVerifier": "unknown on testnet; fallback TestnetVerifier until confirmed",
+    "usdg": "not documented on testnet; MockUSDG used"
+  },
+  "feeds": {
+    "note": "BTC/ETH: Chainlink Data Streams v3 crypto feed IDs as used on Chainlink testnets. NVDA/TSLA/SPY: RefractFi testnet placeholder v8 IDs (0x0008 + keccak). All unverified for Robinhood testnet; replace in M11. Prices are 18-decimal.",
+    "BTC/USD": "0x00037da06d56d083fe599397a4769a042d63aa73dc4ef57709d31e9971a5b439",
+    "ETH/USD": "0x000359843a543ee2fe414dc14c7e7920ef10f4372990b79d6361cdc0dd1ba782",
+    "NVDA/USD": "0x0008dad289e1c73103a22dafe95a38cd898f5cabec7172c7e4edcf417a163aef",
+    "TSLA/USD": "0x0008e8640e3e64633aba6a9a15e664b4b97648b9143529afeb5bb7fa497ca3eb",
+    "SPY/USD": "0x0008f6a7b671a96a8b5140aeffd2ebd3fae2a18b7758a8265ddda7129df279f0"
+  },
+  "markets": [
+    {
+      "id": 0,
+      "name": "BTC/USD",
+      "maxLev": 20,
+      "maxSkew": 50,
+      "maxAge": 30
+    },
+    {
+      "id": 1,
+      "name": "ETH/USD",
+      "maxLev": 20,
+      "maxSkew": 1000,
+      "maxAge": 30
+    },
+    {
+      "id": 2,
+      "name": "NVDA/USD",
+      "maxLev": 10,
+      "maxSkew": 5000,
+      "maxAge": 30,
+      "hours": "US regular session"
+    },
+    {
+      "id": 3,
+      "name": "TSLA/USD",
+      "maxLev": 10,
+      "maxSkew": 2500,
+      "maxAge": 30,
+      "hours": "US regular session"
+    },
+    {
+      "id": 4,
+      "name": "SPY/USD",
+      "maxLev": 10,
+      "maxSkew": 1500,
+      "maxAge": 30,
+      "hours": "US regular session"
+    }
+  ],
+  "lensSeed": "1000000 mUSDG",
+  "previous": {
+    "RefractEngine_v1": {
+      "address": "0x17ccdd380727ca7950ebb293b2c7fb5b88ed3ea0",
+      "block": 152473738,
+      "note": "pre-caps engine, retired 2026-11-16"
+    }
+  },
+  "caps": {
+    "lens": "2000000 USDG",
+    "crystal": "50000 USDG"
+  },
+  "supabasePublishableKey": "sb_publishable_-6ceryLatKCi9ePdWtWE3g_lvR6yOF-",
+  "adminSafe": {
+    "address": "0xAa60F903634674925ee6877B521b25f8C4e12EcB",
+    "owners": [
+      "0x071AabeF35529ba679A69124464aA27315374614",
+      "0xaC7a65e01C08Ae7FfA25C632643358AF322f7856",
+      "0xcff62C000bee72b5Fe73A8C400791F403b1fBB9A"
+    ],
+    "threshold": 2,
+    "note": "Engine admin (Safe v1.4.1 L2). Guardian stays a single key: it can only pause opens."
+  }
+}

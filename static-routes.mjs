@@ -1,0 +1,3 @@
+import {mkdir,copyFile} from 'node:fs/promises';
+const paths=['dashboard','protocol','about','learn','legal/privacy','legal/terms',...['overview','architecture','contracts','economics','ecosystem','roadmap','network','security','developers'].map(s=>'protocol/'+s),...['crystals-and-beams','netted-margin','crossing-windows','beam-risk','lens-liquidity','agent-sdk','private-payments','phone-to-claim','zero-knowledge','relay-protection','escrow-refunds','smart-accounts'].map(s=>'learn/'+s)];
+for(const path of paths){await mkdir('dist/'+path,{recursive:true});await copyFile('dist/index.html','dist/'+path+'/index.html')}

@@ -1,0 +1,377 @@
+[
+  {
+    "slug": "overview",
+    "title": "One account. Many agents.",
+    "short": "The product",
+    "intro": "A proposed on-chain perpetuals engine that combines AI-agent risk limits with one netted margin book.",
+    "sections": [
+      {
+        "title": "One Crystal, many Beams",
+        "text": "A Crystal is an owner-controlled margin account. Each Beam gives an agent a separate virtual book and a defined set of permissions. The contract is designed to charge margin against the Crystal’s net position, while keeping each Beam’s own PnL record."
+      },
+      {
+        "title": "Four parts of the system",
+        "rows": [
+          [
+            "Crystal",
+            "One owner-controlled margin account with deposit, withdrawal and flatten controls."
+          ],
+          [
+            "Beams",
+            "Up to 16 agent books per Crystal, each with a budget, leverage cap, allowed markets, expiry, drawdown stops and performance fee."
+          ],
+          [
+            "Crossing windows",
+            "Opposite orders can cross at a verified mark in five-second windows; only the remaining imbalance may reach the Lens."
+          ],
+          [
+            "Lens",
+            "A liquidity pool that takes the other side of the remaining imbalance. Its NAV can fall."
+          ]
+        ]
+      },
+      {
+        "title": "How a position is routed",
+        "steps": [
+          "An owner configures a Beam with an agent key and risk limits.",
+          "An agent proposes a trade within its Beam’s permitted markets, budget and leverage cap.",
+          "The agent can route directly to the Lens or queue for the next crossing window.",
+          "At settlement, eligible opposing orders cross at the verified close mark; residual flow may fill against the Lens within the specified slippage and skew limits."
+        ]
+      },
+      {
+        "title": "Owner controls and boundaries",
+        "text": "Agent keys are designed to trade only within their assigned Beam; they cannot withdraw the owner’s collateral. The owner can cut a Beam or flatten the Crystal. An owner remains exposed to market, contract, oracle and liquidation risks."
+      },
+      {
+        "title": "Current status",
+        "text": "The supplied kit contains an engine, feed adapter, registry, trace-root contract and TypeScript SDK. Robinhood Chain deployment addresses and the final oracle configuration require independent verification."
+      }
+    ]
+  },
+  {
+    "slug": "architecture",
+    "title": "Protocol architecture",
+    "short": "Architecture",
+    "intro": "Virtual agent books, one netted account, a shared counterparty and verified price reports.",
+    "sections": [
+      {
+        "title": "System map",
+        "rows": [
+          [
+            "RefractEngine",
+            "Crystals, Beams, netted positions, crossing windows, the Lens, funding and risk paths."
+          ],
+          [
+            "StreamsFeed",
+            "Verifies signed price reports and stores price history, including exact-close prices for crossing windows."
+          ],
+          [
+            "SpectrumRegistry",
+            "Agent discovery records; it does not move funds."
+          ],
+          [
+            "TraceRoots",
+            "Sequential epoch Merkle roots for agent decision traces."
+          ],
+          [
+            "Agent SDK",
+            "Bigint math, order checks, crossing calculations, trace helpers and seven MCP tool interfaces."
+          ]
+        ]
+      },
+      {
+        "title": "Netted real book",
+        "text": "Each fill updates a Beam’s virtual book and its Crystal’s real book at the same price and fee. Initial margin is calculated on net market positions. A trade that increases net Crystal exposure is margin-checked even if it reduces an individual Beam."
+      },
+      {
+        "title": "Five-second crossing",
+        "steps": [
+          "Orders enter a five-second market window and reserve pending notional.",
+          "After close, a verified report observed at the exact close supplies the mark.",
+          "Valid opposing orders cross at that mark; the light side fills and the heavy side crosses pro rata.",
+          "Residual may fill against the Lens only when the skew cap and every heavy-side order’s slippage bound permit it.",
+          "After a 120-second grace period, an unsettled window can be voided to release reservations."
+        ]
+      },
+      {
+        "title": "Off-chain services",
+        "text": "The specification calls for report pushers, window settlers, enforcers, liquidators, trace posters, an indexer, an MCP server and owner alerts. Later phases describe paper seasons and a Lens hedger. These services require separate implementation and operation."
+      },
+      {
+        "title": "Limits in the kit",
+        "rows": [
+          [
+            "Markets",
+            "Up to 32 configured markets."
+          ],
+          [
+            "Beams",
+            "Up to 16 per Crystal."
+          ],
+          [
+            "Crossing",
+            "Up to 32 orders per market window and two orders per Beam per window."
+          ],
+          [
+            "Performance fee",
+            "At most 30%; crystallization is no more frequent than once every seven days."
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "contracts",
+    "title": "The contract suite",
+    "short": "Contracts",
+    "intro": "Four contract responsibilities in the supplied, unaudited kit.",
+    "sections": [
+      {
+        "title": "Core and periphery",
+        "rows": [
+          [
+            "RefractEngine",
+            "Margin accounts, Beam rules, Lens liquidity, execution, netting, stops, funding and liquidation."
+          ],
+          [
+            "StreamsFeed",
+            "The supplied adapter verifies signed reports and stores price history; its Robinhood Chain feed configuration must be confirmed per market."
+          ],
+          [
+            "SpectrumRegistry",
+            "Lists agent addresses and metadata with a capped performance-fee field; discovery only."
+          ],
+          [
+            "TraceRoots",
+            "Accepts sequential epoch roots from the authorized poster and verifies Merkle proofs."
+          ]
+        ]
+      },
+      {
+        "title": "Principal operations",
+        "code": "openCrystal() · deposit() · withdraw() · setBeam()\ntrade() · queueCross() · settleWindow() · voidWindow()\nenforce() · cutBeam() · rearm() · flatten() · liquidate()\nlpDeposit() · lpWithdraw() · crystallize()"
+      },
+      {
+        "title": "Exits and risk",
+        "text": "The guardian can pause increases in risk. The intended risk paths retain reductions, Beam cuts, flattening, collateral withdrawal subject to account conditions, and Lens withdrawals subject to free NAV. A cut can leave the remaining Crystal less hedged."
+      },
+      {
+        "title": "Review before deployment",
+        "text": "The kit is unaudited. Its included tests and specification are not a substitute for independent review, deployment verification, operational monitoring or a production security assessment."
+      }
+    ]
+  },
+  {
+    "slug": "economics",
+    "title": "Fees and incentives",
+    "short": "Economics",
+    "intro": "The proposed fee mechanics for immediate fills, crossing, liquidity and agents.",
+    "sections": [
+      {
+        "title": "Indicative fees",
+        "rows": [
+          [
+            "Lens fill",
+            "5 bps taker fee in the proposed configuration, plus the skew-adjusted price impact."
+          ],
+          [
+            "Crossing",
+            "1 bp on crossed fills at the mark in the proposed configuration."
+          ],
+          [
+            "Liquidation",
+            "0.5% of closed notional to the liquidator, as described in the specification."
+          ],
+          [
+            "Agent performance",
+            "Owner-set per Beam, capped at 30% and payable on new equity highs no more than weekly."
+          ]
+        ]
+      },
+      {
+        "title": "Fee allocation",
+        "text": "The overview proposes 80% of Lens taker fees to the Lens and 20% to protocol fees; crossing fees go to protocol fees. The proposed protocol-fee allocation is 80% to service operators, 10% treasury, 5% stakers and 5% buy-and-burn. These are design parameters, not a promise of yield or a statement of deployment."
+      },
+      {
+        "title": "The Lens",
+        "text": "Liquidity providers take the other side of residual imbalance. The Lens can receive fees, skew premium and funding, but its NAV moves with trader PnL and can decline. Withdrawals can be partially filled up to free NAV, with the remainder held for a later withdrawal. The kit’s initial reserve ratio is 20% of net exposure, subject to the configured design and available NAV."
+      },
+      {
+        "title": "$RFCT is planned",
+        "text": "The documents describe possible fee tiers, Spectrum ranking bonds, keeper bonds and later first-loss staking. The token is planned; the documents do not establish a launch, distribution, value, revenue right or return."
+      },
+      {
+        "title": "No guaranteed savings",
+        "text": "Netting can reduce margin versus separate gross books, but results depend on actual positions and market conditions. A net-zero position can become directional if one Beam is cut."
+      }
+    ]
+  },
+  {
+    "slug": "ecosystem",
+    "title": "Owners, agents and liquidity",
+    "short": "Ecosystem",
+    "intro": "A system of account owners, bounded agents, liquidity providers and network operators.",
+    "sections": [
+      {
+        "title": "Account owners",
+        "text": "Owners would fund a Crystal, set each Beam’s budget and rules, and retain control over withdrawals and flattening. Perpetual positions can lose value, and losses can reach deposited collateral."
+      },
+      {
+        "title": "AI agents",
+        "text": "An agent key operates within its Beam’s market list, expiry, cap and stop rules. The SDK exposes status, quotes, order checks and unsigned trade calldata; an agent does not receive withdrawal authority."
+      },
+      {
+        "title": "The Lens",
+        "text": "Liquidity providers supply supported collateral to the Lens. The pool faces the residual imbalance, can experience losses and is subject to reserve-based withdrawal availability."
+      },
+      {
+        "title": "Spectrum and traces",
+        "text": "Spectrum is a planned public agent directory. The design derives records from on-chain Beam histories; decision traces can be committed as epoch Merkle roots. Ranking bonds and paper-season promotion are later features, not verified live services."
+      },
+      {
+        "title": "Keepers and operators",
+        "text": "Independent roles are described for price reports, window settlement, drawdown enforcement, liquidation, trace posting and indexing. The supplied specification calls for self-hosted keepers."
+      }
+    ]
+  },
+  {
+    "slug": "roadmap",
+    "title": "The path to launch",
+    "short": "Roadmap",
+    "intro": "A proposed sequence of milestones and gates, without launch dates or claims of completion.",
+    "sections": [
+      {
+        "title": "R0 · Engine",
+        "text": "Crystal and Beam accounts, Lens fills, BTC and ETH markets, stops, flattening and liquidation. The overview describes audit and initial caps as release gates."
+      },
+      {
+        "title": "R1 · Crossing",
+        "text": "Five-second windows, a settler, MCP tools and decision traces. The proposed gate is seven days of canary windows settled at the exact close price."
+      },
+      {
+        "title": "R2 · Equities",
+        "text": "Potential equity-linked markets with market-status-aware, reduce-only behavior when a market is closed. Feed access and the market-status enum must be confirmed per feed."
+      },
+      {
+        "title": "R3 · Spectrum",
+        "text": "Agent listings, performance fees and paper seasons before promotion to live Beams. The proposed gate is 50 agents completing a paper season within their rules."
+      },
+      {
+        "title": "R4 · Depth",
+        "text": "A capped Lens hedger on other Robinhood Chain venues and additional markets are later proposals."
+      },
+      {
+        "title": "Review gates",
+        "text": "The source defines operational thresholds for volume, crossing and agent participation, and calls for pausing new risk if book reconciliation fails or Lens NAV falls sharply. These are design targets, not completed milestones."
+      },
+      {
+        "title": "Proposed decision thresholds",
+        "rows": [
+          [
+            "R0 + 14 days",
+            "Target at least $5M volume and 150 Crystals running two or more Beams; investigate whether misses reflect product fit or distribution."
+          ],
+          [
+            "R1 + 30 days",
+            "Target at least 15% of volume crossed; a shorter two-second window is one proposed response if missed."
+          ],
+          [
+            "R3 + 30 days",
+            "Target at least 50 listed agents and 30% of Beams hired from Spectrum; otherwise consider a leaderboard-only role."
+          ],
+          [
+            "At any time",
+            "The proposal calls for pausing opens if book reconciliation fails or Lens NAV drops more than 10% in 30 days, while retaining exits."
+          ]
+        ],
+        "text": "These are proposed internal gates and responses, not forecasts or claims of current activity."
+      }
+    ]
+  },
+  {
+    "slug": "network",
+    "title": "Network and price feeds",
+    "short": "Network",
+    "intro": "Built for Robinhood Chain, with USDG settlement and signed price reports.",
+    "sections": [
+      {
+        "title": "Network direction",
+        "text": "RefractFi is built for Robinhood Chain (chain ID 4663). Margin, settlement and Lens deposits use USDG. Network choice does not establish that RefractFi has deployed contracts or a live market."
+      },
+      {
+        "title": "Verified reports",
+        "text": "Prices come from RefractFi’s own oracle. It reads public market data (several exchanges for crypto; exchange quotes and official closes for equities), signs each report, and the feed contract accepts reports only from that signer. Each crossing window settles at the report for its exact close."
+      },
+      {
+        "title": "Robinhood Chain",
+        "text": "Robinhood Chain uses chain ID 4663. The supplied kit settles in six-decimal USDG and reads signed price reports, including market status for equities. RefractFi contract addresses remain to be published and verified."
+      },
+      {
+        "title": "Freshness and market status",
+        "text": "The specified engine stops new risk when a 24/7 price is stale and waits for a fresh price for liquidation. Closed equity markets are designed to be reduce-only. Equity reports carry an open or closed market status set by the oracle."
+      },
+      {
+        "title": "No implied affiliation",
+        "text": "The use of network and oracle names describes technical dependencies. It does not imply an endorsement, official partnership or affiliation."
+      }
+    ]
+  },
+  {
+    "slug": "security",
+    "title": "Risk and security boundaries",
+    "short": "Security",
+    "intro": "Rules can limit agent authority, but leverage, code, prices and liquidity still carry risk.",
+    "sections": [
+      {
+        "title": "Drawdown rules",
+        "text": "The documented defaults use a 5% soft stop that halves a Beam’s cap and a 7.5% hard stop that locks the agent until a permissionless enforcement call cuts and closes the Beam. Actual parameters are owner-set within contract rules."
+      },
+      {
+        "title": "Stops are not guarantees",
+        "text": "Stops are evaluated at oracle marks and require enforcement. Fast market gaps can overshoot a hard stop. Cutting one Beam can unhedge another and increase the Crystal’s net exposure or liquidation risk."
+      },
+      {
+        "title": "Execution and liquidity",
+        "text": "Orders queued for crossing are public before the window closes and can reveal imbalance. The Lens is exposed to residual trader positions and may lose value. A withdrawal can be partially filled when funds are reserved."
+      },
+      {
+        "title": "Oracle and contract risk",
+        "text": "Prices are signed by a single RefractFi oracle key, so an error in its data sources or a compromise of that key would affect every market. Stale or unavailable reports can interrupt new risk and some liquidations. The code kit is unaudited, and the website does not assert a security audit, a live deployment or protection against loss."
+      },
+      {
+        "title": "Eligibility and losses",
+        "text": "Perpetual futures can be restricted by jurisdiction and carry substantial loss risk. The product documents exclude the US, UK and Canada; eligibility and legal requirements require independent review before any launch."
+      }
+    ]
+  },
+  {
+    "slug": "developers",
+    "title": "Developer reference",
+    "short": "Developers",
+    "intro": "A Solidity engine, verified-report adapter and TypeScript agent SDK described by the supplied kit.",
+    "sections": [
+      {
+        "title": "Source kit",
+        "text": "The attached kit contains Foundry contracts in Solidity 0.8.28 and a TypeScript SDK. It identifies OpenZeppelin 5.4 and Foundry tests, plus SDK tests. Test counts are reported by the supplied documents and have not been independently rerun here."
+      },
+      {
+        "title": "Agent interfaces",
+        "text": "The SDK’s preparation tools return unsigned calldata and apply the SDK gate checks. A production MCP server, indexer, RPC integration and signing workflow must still be built and verified.",
+        "code": "crystal_status · beam_status · quote_route\ncheck_order · prepare_trade · prepare_cross · trace_leaf"
+      },
+      {
+        "title": "Math and traces",
+        "text": "The SDK mirrors key fixed-point fill, fee, funding and drawdown calculations; it includes crossing settlement, route estimates, planning calculations and canonical trace hashing with Merkle proofs. The supplied kit uses six-decimal USDG at the boundary and 18-decimal WAD internally; USDG and verifier addresses on Robinhood Chain must be verified before deployment."
+      },
+      {
+        "title": "Services and data",
+        "text": "The engineering plan describes a report pusher, settler, enforcer, liquidator, trace poster, indexer, alerts, and MCP server. Its proposed data stack includes Postgres/Timescale, Redis and an archive RPC. These are plans, not evidence of live infrastructure."
+      },
+      {
+        "title": "Integration boundary",
+        "text": "No RefractFi Robinhood Chain contract deployment address, verified collateral or oracle configuration, live order service or production API is supplied to this website. Verify all deployment and network details before enabling transaction actions."
+      }
+    ]
+  }
+]
