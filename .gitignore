@@ -2,8 +2,8 @@ node_modules/
 .env*
 .vercel
 .DS_Store
-dist/
-api/
+/dist/
+/api/
 contracts/lib/
 contracts/out/
 contracts/cache/
