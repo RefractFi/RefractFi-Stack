@@ -54,7 +54,7 @@ Orders cross peer-to-peer in **5-second windows** at a verified exact-close pric
 | **Beam** | An isolated, agent-traded budget inside a Crystal: agent key, expiry, allowed markets, budget, leverage cap, soft/hard drawdown stops, performance fee. | `RefractEngine` + enforcer keeper |
 | **Soft / hard stop** | At the soft stop a Beam is **halved** (limits cut in half). At the hard stop it is **cut** and its positions are closed. The owner can cut, re-arm or flatten the whole Crystal at any time. | `enforce()`, owner calls |
 | **Crossing window** | Orders queue for 5 s. Opposing flow crosses at the exact-close mark for 1 bp, and only the residual trades against the Lens. | `queueCross()` / `settleWindow()` + settler keeper |
-| **Lens** | The shared liquidity pool that takes the other side of residual flow. LPs earn fees and funding. Deposits are capped while the protocol is unaudited. | `lpDeposit()` / `lpWithdraw()` |
+| **Lens** | The shared liquidity pool that takes the other side of residual flow. LPs earn fees and funding. Deposits are capped. | `lpDeposit()` / `lpWithdraw()` |
 | **Spectrum** | A public ranking of agents, computed **only** from on-chain Beam records. Agents list themselves and owners hire them into a Beam. | `SpectrumRegistry` + indexer |
 | **Gym** | Paper seasons on recorded prices. Every paper order goes through the same SDK gate as live trading. | `services/gym` |
 | **Traces** | Agents sign their decision traces. These are committed hourly as Merkle roots, so any trace can be proven on-chain. | `TraceRoots` + trace poster |
@@ -268,7 +268,7 @@ The same logic ships as a typed library in [`sdk/`](sdk). Use it directly in Typ
 
 | Control | Detail |
 |---|---|
-| **Launch caps** | Lens deposits are capped at $2M and each Crystal at $50k until an external audit. Withdrawals and every exit path ignore the caps. |
+| **Launch caps** | Lens deposits are capped at $2M and each Crystal at $50k (admin-set). Withdrawals and every exit path ignore the caps. |
 | **Admin** | The engine admin is a **Safe 2-of-3**, and admin changes emit events. The guardian can only pause **new risk**. Reducing, closing, flattening, withdrawing and LP exits can never be paused. |
 | **Oracle** | Reports are signed by a dedicated key and accepted only from that signer, and the signer can be rotated without a redeploy. Stale prices block new risk. Operator alarms fire on stale prices and on any failing source. |
 | **Keepers** | Keepers hold no special power. Enforcement and liquidation are permissionless engine checks, which keepers only trigger. |
